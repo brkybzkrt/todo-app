@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const SECRET_KEY = process.env.SECRET_KEY;
+const JWT_SECRET = process.env.JWT_SECRET;
 
 const authMiddleware = (req, res, next) => {
     
@@ -8,7 +8,7 @@ const authMiddleware = (req, res, next) => {
     if (!token) return res.status(401).json({ message: "Yetkisiz erişim" });
 
     try {
-        const decoded = jwt.verify(token.replace("Bearer ", ""), SECRET_KEY);
+        const decoded = jwt.verify(token.replace("Bearer ", ""), JWT_SECRET);
         req.user = decoded;
         next();
     } catch (error) {
