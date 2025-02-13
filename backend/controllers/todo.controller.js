@@ -33,7 +33,7 @@ const updateTodo = async (req, res) => {
         if (!todo) return res.status(404).json({ message: "Todo bulunamadı" });
 
         for (const key in req.body) {
-            if (req.body.hasOwnProperty(key) && Todo.schema.obj.hasOwnProperty(key)) {
+            if (Todo.schema.obj.hasOwnProperty(key)) {
                 if (req.body.hasOwnProperty("categories") && Array.isArray(req.body.categories)) {
                     const incomingCategories = req.body.categories;
                     const currentCategories = todo.categories || [];
