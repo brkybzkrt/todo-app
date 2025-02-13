@@ -32,14 +32,35 @@ const updateTodo = async (req, res) => {
         const todo = await Todo.findById(req.params.id);
         if (!todo) return res.status(404).json({ message: "Todo bulunamadı" });
 
-        todo.title = req.body.title;
+        for (const key in req.body) {
+            if (req.body.hasOwnProperty(key) && Todo.schema.obj.hasOwnProperty(key)) {
+                if (req.body.hasOwnProperty("categories") && Array.isArray(req.body.categories)) {
+                    const incomingCategories = req.body.categories;
+                    const currentCategories = todo.categories || [];
+                
+                    // Yeni eklenmesi gereken category'ler
+                    const categoriesToAdd = incomingCategories.filter(cid => !currentCategories.includes(cid));
+                
+                    // Mevcutta olup çıkartılmaması gereken category'ler
+                    const categoriesToKeep = incomingCategories.filter(cid => currentCategories.includes(cid));
+                
+                    // Tekrardan aynı category eklenmiş olsa bile set ile unique hale getiriyoruz.
+                    todo.categories = [...new Set([...categoriesToKeep, ...categoriesToAdd])];
+                }
+                 else {
+                    // Diğer alanları güncelliyoruz
+                    todo[key] = req.body[key];
+                }
+            }
+        }
+
         await todo.save();
         res.json(todo);
 
     } catch (error) {
-        res.status(500).json({ message: "Todo güncellenirken hata meydana geldi", error });
+        res.status(500).json({ message: "Todo güncellenirken hata meydana geldi", error });
     }
-}
+};
 
 const deleteTodo = async (req, res) => {
     try {

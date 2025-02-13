@@ -5,7 +5,7 @@ const router = express.Router();
 
 router.post("/", addTodo); // Kullanıcı giriş yapmışsa todo ekleyebilir
 router.get("/", getUserTodos); // Kullanıcının kendi todo'larını döndürür.
-router.put("/:id", updateTodo); // Kullanıcının todo'larını güncelleyebilir
+router.patch("/:id", updateTodo); // Kullanıcının todo'larını güncelleyebilir
 router.delete("/:id", deleteTodo); // Kullanıcının todo'larını silme yetkisi ver
 
 module.exports = router;
