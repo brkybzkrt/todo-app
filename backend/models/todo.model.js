@@ -5,6 +5,7 @@ const TodoSchema = new mongoose.Schema({
     completed: { type: Boolean, default: false },
     isDeleted: { type: Boolean, default: false },
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    categories: [{ type: mongoose.Schema.Types.ObjectId, ref: "Category" }],
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now }
 });
