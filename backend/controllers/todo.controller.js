@@ -20,7 +20,7 @@ const addTodo = async (req, res) => {
 
 const getUserTodos = async (req, res) => {
     try {
-        const todos = await Todo.find({ user: req.user._id }).populate("user", "username");
+        const todos = await Todo.find({ user: req.user._id, isDeleted: false }).populate("user", "username");
         res.json(todos);
     } catch (error) {
         res.status(500).json({ message: "Todo'lar getirilirken hata meydana geldi", error });
