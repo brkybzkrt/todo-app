@@ -29,4 +29,25 @@ const login = async (req, res) => {
     }
 };
 
-module.exports = { register, login };
+const updatePassword = async (req, res) => {
+    try {
+        const { oldPassword, newPassword } = req.body;
+        const userId = req.user._id; // Auth middleware ile token'dan gelen userId
+
+        const user = await User.findById(userId);
+        if (!user) return res.status(404).json({ message: "Kullanıcı bulunamadı" });
+
+        const isValid = await user.comparePassword(oldPassword);
+        if (!isValid) return res.status(400).json({ message: "Mevcut şifre hatalı" });
+
+        user.password = newPassword; // Yeni şifreyi kaydet (Hash işlemi model içinde yapılmalı!)
+        await user.save();
+
+        res.json({ message: "Şifre başarıyla güncellendi" });
+    } catch (error) {
+        res.status(500).json({ message: "Şifre güncelleme başarısız", error });
+    }
+};
+
+
+module.exports = { register, login, updatePassword };
