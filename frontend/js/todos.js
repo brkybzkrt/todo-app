@@ -28,6 +28,9 @@ function initDataTable() {
                             <button class="btn btn-sm btn-success toggle-status" data-id="${data._id}" data-completed="${data.completed}">
                                 ${data.completed ? 'Undo' : 'Complete'}
                             </button>
+                            <button class="btn btn-sm btn-warning update-todo" data-id="${data._id}" data-title="${data.title}">
+                                Update
+                            </button>
                             <button class="btn btn-sm btn-danger delete-todo" data-id="${data._id}">
                                 Delete
                             </button>
@@ -52,6 +55,12 @@ function initDataTable() {
     $('#todosTable').on('click', '.delete-todo', function() {
         const todoId = $(this).data('id');
         deleteTodo(todoId);
+    });
+
+    $('#todosTable').on('click', '.update-todo', function() {
+        const todoId = $(this).data('id');
+        const currentTitle = $(this).data('title');
+        showUpdateTodoModal(todoId, currentTitle);
     });
 }
 
@@ -138,7 +147,7 @@ const addTodo = () => {
             if (data._id) {
                 loadTodos(); // yeni bir todo eklendiğinde tabloyu yenile
                 $("#todoSurveyContainer").empty();
-                bootstrap.Modal.getInstance(document.getElementById('addTodoModal')).hide(); // Hide modal
+                bootstrap.Modal.getInstance(document.getElementById('addTodoModal')).hide();
             } else {
                 alert(data.message || 'An error occurred');
             }
@@ -152,6 +161,43 @@ const addTodo = () => {
     $("#todoSurveyContainer").empty();
     $("#todoSurveyContainer").Survey({ model: survey });
     new bootstrap.Modal(document.getElementById('addTodoModal')).show();
+}
+
+const showUpdateTodoModal = (todoId, currentTitle) => {
+    const survey = new Survey.Model(todoAddJson);
+    survey.data = { title: currentTitle };
+    
+    survey.onComplete.add((sender, options) => {
+        const token = localStorage.getItem('token');
+        const formData = sender.data;
+        
+        fetch(`http://localhost:3000/v1/todos/${todoId}`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ title: formData.title })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data._id) {
+                loadTodos(); 
+                $("#updateTodoSurveyContainer").empty(); 
+                bootstrap.Modal.getInstance(document.getElementById('updateTodoModal')).hide(); 
+            } else {
+                alert(data.message || 'An error occurred');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while updating the todo');
+        });
+    });
+
+    $("#updateTodoSurveyContainer").empty();
+    $("#updateTodoSurveyContainer").Survey({ model: survey });
+    new bootstrap.Modal(document.getElementById('updateTodoModal')).show();
 }
 
 document.addEventListener('DOMContentLoaded', function() {
