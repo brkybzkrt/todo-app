@@ -13,6 +13,18 @@ function initDataTable() {
         columns: [
             { data: 'title' },
             { 
+                data: 'categories',
+                render: (data) => {
+                    if (!data || data.length === 0) {
+                        return '';
+                    }
+                    let categoriesHtml = data.map(category => {
+                        return `<span class="badge bg-info">${category.title}</span>`;
+                    }).join(', ');
+                    return categoriesHtml;
+                }
+            },
+            { 
                 data: 'completed',
                 render: (data) => {
                     return data ? 
