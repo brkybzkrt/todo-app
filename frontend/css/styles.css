@@ -1,0 +1,25 @@
+.container {
+    max-width: 800px;
+}
+
+.auth-buttons {
+    text-align: center;
+}
+
+.auth-buttons button {
+    margin: 0 10px;
+    min-width: 100px;
+}
+
+.auth-buttons button.active {
+    font-weight: bold;
+}
+
+#surveyContainer {
+    margin-top: 20px;
+}
+
+
+.action-buttons button {
+    margin: 0 5px;
+}
