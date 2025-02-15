@@ -3,6 +3,8 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const path = require("path");
+const swaggerUi = require('swagger-ui-express');
+const specs = require('./swagger');
 const authMiddleware = require("./middlewares/auth");
 const connectDB = require("./db"); // Import the connectDB function
 
@@ -22,9 +24,15 @@ app.use("/v1/auth", authRoutes);
 app.use("/v1/todos", authMiddleware, todoRoutes);
 app.use("/v1/categories", authMiddleware, categoryRoutes);
 
+// Swagger
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
+
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Server is running on http://localhost:${PORT}`));
+app.listen(PORT, () => {
+    console.log(`🚀 Server is running on http://localhost:${PORT}`);
+    console.log(`API Documentation available at http://localhost:${PORT}/api-docs`);
+});
