@@ -1,5 +1,5 @@
 const express = require("express");
-const { register, login, updatePassword } = require("../controllers/auth.controller");
+const { register, login, updatePassword, createAdmin } = require("../controllers/auth.controller");
 const authMiddleware = require("../middlewares/auth");
 
 const router = express.Router();
@@ -114,5 +114,31 @@ router.post("/register", register);
  *         description: Invalid credentials
  */
 router.patch("/update-password", authMiddleware, updatePassword);
+
+/**
+ * @swagger
+ * /auth/create-admin:
+ *   post:
+ *     summary: Create a new admin
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/User'
+ *     responses:
+ *       201:
+ *         description: Admin created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AuthResponse'
+ *       401:
+ *         description: Invalid credentials
+ */
+router.post("/create-admin", createAdmin);
 
 module.exports = router;

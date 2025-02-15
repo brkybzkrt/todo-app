@@ -1,5 +1,6 @@
 const express = require("express");
 const { createCategory, getCategories, updateCategory, deleteCategory } = require("../controllers/category.controller");
+const adminAuth = require("../middlewares/adminAuth");
 
 const router = express.Router();
 
@@ -17,14 +18,14 @@ const router = express.Router();
  *     Category:
  *       type: object
  *       required:
- *         - name
+ *         - title
  *       properties:
  *         _id:
  *           type: string
  *           description: Auto-generated ID of the category
- *         name:
+ *         title:
  *           type: string
- *           description: The name of the category
+ *           description: The title of the category
  */
 
 /**
@@ -42,18 +43,18 @@ const router = express.Router();
  *           schema:
  *             type: object
  *             required:
- *               - name
+ *               - title
  *             properties:
- *               name:
+ *               title:
  *                 type: string
- *                 description: The name of the category
+ *                 description: The title of the category
  *     responses:
  *       201:
  *         description: Category created successfully
  *       401:
  *         description: Unauthorized
  */
-router.post("/", createCategory);
+router.post("/", adminAuth, createCategory);
 
 /**
  * @swagger
@@ -99,9 +100,9 @@ router.get("/", getCategories);
  *           schema:
  *             type: object
  *             properties:
- *               name:
+ *               title:
  *                 type: string
- *                 description: The new name of the category
+ *                 description: The new title of the category
  *     responses:
  *       200:
  *         description: Category updated successfully
@@ -110,7 +111,7 @@ router.get("/", getCategories);
  *       404:
  *         description: Category not found
  */
-router.patch("/:id", updateCategory);
+router.patch("/:id", adminAuth, updateCategory);
 
 /**
  * @swagger
@@ -135,6 +136,6 @@ router.patch("/:id", updateCategory);
  *       404:
  *         description: Category not found
  */
-router.delete("/:id", deleteCategory);
+router.delete("/:id", adminAuth, deleteCategory);
 
 module.exports = router;

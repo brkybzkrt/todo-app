@@ -21,7 +21,7 @@ const login = async (req, res) => {
         const isValid = await user.comparePassword(password);
         if (!isValid) return res.status(400).json({ message: "Şifre hatalı" });
 
-        const token = jwt.sign({ _id: user._id, username: user.username }, process.env.JWT_SECRET, { expiresIn: "1h" });
+        const token = jwt.sign({ _id: user._id, username: user.username,...(user.isAdmin ? { isAdmin: true } : {}) }, process.env.JWT_SECRET, { expiresIn: "1h" });
 
         res.json({ token });
     } catch (error) {
@@ -49,5 +49,21 @@ const updatePassword = async (req, res) => {
     }
 };
 
+const createAdmin = async (req, res) => {
+    try {
+        const adminData = { ...req.body, isAdmin: true };
+        const admin = new User(adminData);
+        await admin.save();
+        
+        res.status(201).json({ message: "Admin kullanıcı başarıyla oluşturuldu" });
+    } catch (error) {
+        res.status(400).json({ message: "Admin kullanıcı oluşturma başarısız", error });
+    }
+};
 
-module.exports = { register, login, updatePassword };
+module.exports = {
+    register,
+    login,
+    updatePassword,
+    createAdmin
+};
