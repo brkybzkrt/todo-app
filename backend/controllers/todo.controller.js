@@ -34,7 +34,7 @@ const updateTodo = async (req, res) => {
 
         for (const key in req.body) {
             if (Todo.schema.obj.hasOwnProperty(key)) {
-                if (req.body.hasOwnProperty("categories") && Array.isArray(req.body.categories)) {
+                if (key === "categories" && Array.isArray(req.body.categories)) {
                     const incomingCategories = req.body.categories;
                     const currentCategories = todo.categories || [];
                 

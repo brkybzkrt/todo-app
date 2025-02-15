@@ -22,12 +22,12 @@ function createSurvey(json) {
                 localStorage.setItem('token', data.token);
                 showTodoContainer();
             } else {
-                alert(data.message || 'An error occurred');
+                alert(data.message);
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('An error occurred while processing your request');
+            alert(error.message);
         });
     });
 
