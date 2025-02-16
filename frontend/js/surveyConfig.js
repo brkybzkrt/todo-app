@@ -1,4 +1,5 @@
 export const loginJson = {
+  title: "Login",
   elements: [
     {
       type: "text",
@@ -21,6 +22,7 @@ export const loginJson = {
 };
 
 export const registerJson = {
+  title: "Register",
   elements: [
     {
       type: "text",
@@ -37,6 +39,14 @@ export const registerJson = {
       inputType: "password",
       placeholder: "Choose a password",
     },
+    {
+      type: "boolean",
+      name: "isAdmin",
+      title: "Is Admin User?",
+      labelTrue: "Yes",
+      labelFalse: "No",
+      defaultValue: false
+    }
   ],
   showQuestionNumbers: false,
   completeText: "Register",

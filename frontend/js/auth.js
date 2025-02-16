@@ -18,6 +18,13 @@ function createSurvey(json) {
         })
         .then(response => response.json())
         .then(data => {
+            if (json === registerJson) {
+                // Kayıt başarılı ise login formuna yönlendir
+                alert("Kayıt başarılı! Lütfen giriş yapın.");
+                showLogin();
+                return;
+            }
+
             if (data.token) {
                 localStorage.setItem('token', data.token);
                 // role kontrolü için me entpointine istek atılıyor
