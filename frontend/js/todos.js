@@ -1,8 +1,6 @@
 import { todoAddJson, todoUpdateJson } from './surveyConfig.js';
 import { showAuthContainer } from './auth.js';
 
-let userTodosTable;
-let adminTodosTable;
 
 function initUserTable(todos) {
     if ($.fn.DataTable.isDataTable('#userTodosTable')) {
@@ -149,18 +147,18 @@ export const loadTodos = () => {
         return;
     }
 
-    // Show/hide appropriate containers
+    // containerlar role göre gizleniyor
     document.getElementById('userTableContainer').style.display = isAdmin ? 'none' : 'block';
     document.getElementById('adminTableContainer').style.display = isAdmin ? 'block' : 'none';
     document.getElementById('addTodoBtn').style.display = isAdmin ? 'none' : 'block';
 
-    // Update page title
+    // page title role göre değişiyor
     const titleElement = document.querySelector('.content-header h1');
     if (titleElement) {
         titleElement.textContent = isAdmin ? 'All Todos (Admin View)' : 'My Todos';
     }
 
-    // Determine the endpoint based on user role
+    // endpoint role göre değişiyor
     const endpoint = isAdmin ? 'http://localhost:3000/v1/todos/all' : 'http://localhost:3000/v1/todos';
 
     fetch(endpoint, {
@@ -175,7 +173,7 @@ export const loadTodos = () => {
         return response.json();
     })
     .then(todos => {
-        // Initialize appropriate table based on user role
+        // role göre datatable oluşturuluyor
         if (isAdmin) {
             initAdminTable(todos);
         } else {
