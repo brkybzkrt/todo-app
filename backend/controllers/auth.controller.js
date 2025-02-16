@@ -61,9 +61,25 @@ const createAdmin = async (req, res) => {
     }
 };
 
+const me = async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id).select('-password');
+        if (!user) return res.status(404).json({ message: "Kullanıcı bulunamadı" });
+        
+        res.json({
+            username: user.username,
+            isAdmin: user.isAdmin || false,
+            _id: user._id
+        });
+    } catch (error) {
+        res.status(500).json({ message: "Kullanıcı bilgileri alınamadı", error });
+    }
+};
+
 module.exports = {
     register,
     login,
     updatePassword,
-    createAdmin
+    createAdmin,
+    me
 };

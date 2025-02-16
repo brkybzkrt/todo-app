@@ -1,5 +1,6 @@
 const express = require("express");
-const { addTodo, getUserTodos, updateTodo, deleteTodo } = require("../controllers/todo.controller");
+const { addTodo, getUserTodos, updateTodo, deleteTodo, getAllTodos } = require("../controllers/todo.controller");
+const adminAuth = require("../middlewares/adminAuth");
 
 const router = express.Router();
 
@@ -170,5 +171,29 @@ router.patch("/:id", updateTodo);
  *         description: Todo not found
  */
 router.delete("/:id", deleteTodo);
+
+/**
+ * @swagger
+ * /todos/all:
+ *   get:
+ *     summary: Get all todos (Admin only)
+ *     tags: [Todos]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of all todos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Todo'
+ *       401:
+ *         description: Unauthorized - Not authenticated or not an admin
+ *       500:
+ *         description: Server error
+ */
+router.get("/all", adminAuth, getAllTodos);
 
 module.exports = router;
