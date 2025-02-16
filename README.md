@@ -76,7 +76,7 @@ todo-app/
 ![User Todos](./project-images/admin-all-todos.png)
 
 - Güvenli kimlik doğrulama ve yetkilendirme
-- Swagger ile API dokümantasyonu
+- Swagger ile API dokümantasyonu (http://localhost:3000/api-docs/)
 
 ![Swagger](./project-images/swagger-doc.png)
 
