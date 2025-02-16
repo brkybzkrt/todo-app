@@ -1,31 +1,37 @@
 import { todoAddJson, todoUpdateJson } from './surveyConfig.js';
 import { showAuthContainer } from './auth.js';
 
-let todosTable;
+let userTodosTable;
+let adminTodosTable;
 
-function initDataTable() {
-    if ($.fn.DataTable.isDataTable('#todosTable')) {
-        todosTable = $('#todosTable').DataTable();
-        return;
+function initUserTable(todos) {
+    if ($.fn.DataTable.isDataTable('#userTodosTable')) {
+        $('#userTodosTable').DataTable().destroy();
     }
+    $('#userTodosTable').off();
 
-    todosTable = $('#todosTable').DataTable({
+    userTodosTable = $('#userTodosTable').DataTable({
+        data: todos,
         columns: [
-            { data: 'title' },
+            { 
+                data: 'title',
+                title: 'Title'
+            },
             { 
                 data: 'categories',
+                title: 'Categories',
                 render: (data) => {
                     if (!data || data.length === 0) {
                         return '';
                     }
-                    let categoriesHtml = data.map(category => {
-                        return `<span class="badge bg-info">${category.title}</span>`;
-                    }).join(' ');
-                    return categoriesHtml;
+                    return data.map(category => 
+                        `<span class="badge bg-info">${category.title}</span>`
+                    ).join(' ');
                 }
             },
             { 
                 data: 'completed',
+                title: 'Status',
                 render: (data) => {
                     return data ? 
                         '<span class="badge bg-success">Completed</span>' : 
@@ -34,6 +40,7 @@ function initDataTable() {
             },
             {
                 data: null,
+                title: 'Actions',
                 render: (data) => {
                     return `
                         <div class="action-buttons">
@@ -57,22 +64,25 @@ function initDataTable() {
         responsive: true,
         language: {
             emptyTable: "No todos found"
-        }
+        },
+        order: [[0, 'desc']]
     });
 
-    // dynamic oluşan butonlara event atadık
-    $('#todosTable').on('click', '.toggle-status', function() {
+    // Event handlers for user table
+    $('#userTodosTable').on('click', '.toggle-status', function() {
         const todoId = $(this).data('id');
         const completed = $(this).data('completed');
         changeTodoStatus(todoId, !completed);
     });
 
-    $('#todosTable').on('click', '.delete-todo', function() {
+    $('#userTodosTable').on('click', '.delete-todo', function() {
         const todoId = $(this).data('id');
-        deleteTodo(todoId);
+        if (confirm('Are you sure you want to delete this todo?')) {
+            deleteTodo(todoId);
+        }
     });
 
-    $('#todosTable').on('click', '.update-todo', function() {
+    $('#userTodosTable').on('click', '.update-todo', function() {
         const todoId = $(this).data('id');
         const currentTitle = $(this).data('title');
         const currentCategories = $(this).data('categories');
@@ -80,26 +90,100 @@ function initDataTable() {
     });
 }
 
+function initAdminTable(todos) {
+    if ($.fn.DataTable.isDataTable('#adminTodosTable')) {
+        $('#adminTodosTable').DataTable().destroy();
+    }
+    $('#adminTodosTable').off();
+
+    adminTodosTable = $('#adminTodosTable').DataTable({
+        data: todos,
+        columns: [
+            { 
+                data: 'title',
+                title: 'Title'
+            },
+            {
+                data: 'user',
+                title: 'User',
+                render: (data) => {
+                    return data ? `<span class="badge bg-primary">${data.username}</span>` : '';
+                }
+            },
+            { 
+                data: 'categories',
+                title: 'Categories',
+                render: (data) => {
+                    if (!data || data.length === 0) {
+                        return '';
+                    }
+                    return data.map(category => 
+                        `<span class="badge bg-info">${category.title}</span>`
+                    ).join(' ');
+                }
+            },
+            { 
+                data: 'completed',
+                title: 'Status',
+                render: (data) => {
+                    return data ? 
+                        '<span class="badge bg-success">Completed</span>' : 
+                        '<span class="badge bg-warning">Pending</span>';
+                }
+            }
+        ],
+        responsive: true,
+        language: {
+            emptyTable: "No todos found"
+        },
+        order: [[0, 'desc']]
+    });
+}
+
 export const loadTodos = () => {
     const token = localStorage.getItem('token');
+    const isAdmin = localStorage.getItem('isAdmin') === 'true';
+    
     if (!token) {
         showAuthContainer();
         return;
     }
 
-    fetch('http://localhost:3000/v1/todos', {
+    // Show/hide appropriate containers
+    document.getElementById('userTableContainer').style.display = isAdmin ? 'none' : 'block';
+    document.getElementById('adminTableContainer').style.display = isAdmin ? 'block' : 'none';
+    document.getElementById('addTodoBtn').style.display = isAdmin ? 'none' : 'block';
+
+    // Update page title
+    const titleElement = document.querySelector('.content-header h1');
+    if (titleElement) {
+        titleElement.textContent = isAdmin ? 'All Todos (Admin View)' : 'My Todos';
+    }
+
+    // Determine the endpoint based on user role
+    const endpoint = isAdmin ? 'http://localhost:3000/v1/todos/all' : 'http://localhost:3000/v1/todos';
+
+    fetch(endpoint, {
         headers: {
             'Authorization': `Bearer ${token}`
         }
     })
-    .then(response => response.json())
-    .then(todos => {
-        if (!todosTable) {
-            initDataTable();
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Failed to fetch todos');
         }
-        todosTable.clear().rows.add(todos).draw();
+        return response.json();
+    })
+    .then(todos => {
+        // Initialize appropriate table based on user role
+        if (isAdmin) {
+            initAdminTable(todos);
+        } else {
+            initUserTable(todos);
+        }
     })
     .catch(error => {
+        console.error('Error:', error);
         if (error.message === 'Failed to fetch todos') {
             showAuthContainer();
         }
@@ -249,7 +333,7 @@ const showUpdateTodoModal = async (todoId, currentTitle, currentCategories) => {
 
 document.addEventListener('DOMContentLoaded', function() {
     //HTML ve DOM yüklendikten sonra datalar yükleniyor
-    initDataTable();
+    loadTodos();
     
     // addTodoBtn idli butona click eventi ekledik
     document.getElementById('addTodoBtn').addEventListener('click', addTodo);
