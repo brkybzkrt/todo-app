@@ -74,3 +74,29 @@ export const todoUpdateJson = {
     },
   ],
 };
+
+export const categoryAddJson = {
+  elements: [
+    {
+      type: "text",
+      name: "title",
+      title: "Title:",
+      isRequired: true,
+      placeholder: "Enter category title",
+    },
+  ],
+  showQuestionNumbers: false,
+  completeText: "Add Category",
+};
+
+export const categoryUpdateJson = {
+  elements: [
+    {
+      type: "text",
+      name: "title",
+      title: "Title:",
+      isRequired: true,
+      maxLength: 255,
+    }
+  ],
+};
