@@ -2,8 +2,45 @@ import { todoAddJson, todoUpdateJson } from './surveyConfig.js';
 import { showAuthContainer } from './auth.js';
 import { initAdminCategoriesTable, addCategory } from './categories.js';
 
+// Socket.io bağlantısı
+const socket = io('http://localhost:3000');
+
 let userTodosTable;
 let adminTodosTable;
+
+// Socket event listener'ı - yeni todo eklendiğinde
+socket.on('todoCreated', (todo) => {
+    if (adminTodosTable) {
+        const data = adminTodosTable.data().toArray();
+        data.unshift(todo); // Yeni todoyu başa ekle
+        adminTodosTable.clear().rows.add(data).draw();
+    }
+});
+
+// Socket event listener'ı - todo silindiğinde
+socket.on('todoDeleted', (todoId) => {
+    if (adminTodosTable) {
+        // Silinen todo'yu tablodan kaldır
+        adminTodosTable.rows((idx, data) => {
+            return data._id === todoId;
+        }).remove().draw();
+    }
+});
+
+// Socket event listener'ı - todo güncellendiğinde
+socket.on('todoUpdated', (updatedTodo) => {
+    if (adminTodosTable) {
+        // Güncellenen todo'nun indeksini bul
+        const rowIndex = adminTodosTable.rows((_, data) => {
+            return data._id === updatedTodo._id;
+        }).indexes()[0];
+
+        if (rowIndex !== undefined) {
+            // Todo'yu güncelle
+            adminTodosTable.row(rowIndex).data(updatedTodo).draw();
+        }
+    }
+});
 
 function initUserTable(todos) {
     if (userTodosTable) {
@@ -71,7 +108,6 @@ function initUserTable(todos) {
         order: [[0, 'desc']]
     });
 
-    // Event handlers for user table
     $('#userTodosTable').on('click', '.toggle-status', function() {
         const todoId = $(this).data('id');
         const completed = $(this).data('completed');

@@ -1,20 +1,21 @@
 const Todo = require("../models/todo.model");
 const User = require("../models/user.model");
+const todoEvents = require('../events/todoEvents');
 
 const addTodo = async (req, res) => {
     try {
-        const user = await User.findById(req.user._id);
-        if (!user) return res.status(404).json({ message: "Kullanıcı bulunamadı" });
+        const { title } = req.body;
+        const newTodo = await Todo.create({ title, user: req.user._id });
 
-        const todo = new Todo({
-            title: req.body.title,
-            user: req.user._id,
-        });
+        const populatedTodo = await Todo.findById(newTodo._id)
+            .populate('user', 'username')
+            .populate('categories');
 
-        await todo.save();
-        res.status(201).json(todo);
+        todoEvents.emit('todoCreated', populatedTodo);
+
+        res.status(201).json(populatedTodo);
     } catch (error) {
-        res.status(500).json({ message: "Todo eklenemedi", error });
+        res.status(500).json({ message: error.message });
     }
 };
 
@@ -29,9 +30,14 @@ const getUserTodos = async (req, res) => {
 
 const updateTodo = async (req, res) => {
     try {
-        const todo = await Todo.findById(req.params.id);
-        if (!todo) return res.status(404).json({ message: "Todo bulunamadı" });
+        const todoId = req?.params?.id;
+        const todo = await Todo.findById(todoId);
+        
+        if (!todo) {
+            return res.status(404).json({ message: "Todo bulunamadı" });
+        }
 
+        // Gelen alanları kontrol edip güncelleme
         for (const key in req.body) {
             if (Todo.schema.obj.hasOwnProperty(key)) {
                 if (key === "categories" && Array.isArray(req.body.categories)) {
@@ -46,8 +52,7 @@ const updateTodo = async (req, res) => {
                 
                     // Tekrardan aynı category eklenmiş olsa bile set ile unique hale getiriyoruz.
                     todo.categories = [...new Set([...categoriesToKeep, ...categoriesToAdd])];
-                }
-                 else {
+                } else {
                     // Diğer alanları güncelliyoruz
                     todo[key] = req.body[key];
                 }
@@ -55,22 +60,32 @@ const updateTodo = async (req, res) => {
         }
 
         await todo.save();
-        res.json(todo);
+        const updatedTodo = await Todo.findById(todoId)
+            .populate('user', 'username')
+            .populate('categories');
 
+        todoEvents.emit('todoUpdated', updatedTodo);
+
+        res.json(updatedTodo);
     } catch (error) {
-        res.status(500).json({ message: "Todo güncellenirken hata meydana geldi", error });
+        res.status(500).json({ message: error.message });
     }
 };
 
 const deleteTodo = async (req, res) => {
     try {
-        const todo = await Todo.findById(req.params.id);
-        if (!todo) return res.status(404).json({ message: "Todo bulunamadı" });
+        const todoId = req?.params?.id;
+        const deletedTodo = await Todo.findByIdAndDelete(todoId);
+        
+        if (!deletedTodo) {
+            return res.status(404).json({ message: "Todo bulunamadı" });
+        }
 
-        await Todo.findByIdAndUpdate(req.params.id, { isDeleted: true });
-        res.json({ message: "Todo silindi"});
+        todoEvents.emit('todoDeleted', todoId);
+
+        res.status(204).send();
     } catch (error) {
-        res.status(500).json({ message: "Todo silinirken hata meydana geldi", error });
+        res.status(500).json({ message: error.message });
     }
 }
 
