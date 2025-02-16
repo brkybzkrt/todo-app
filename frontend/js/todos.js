@@ -1,15 +1,20 @@
-import { todoAddJson, todoUpdateJson } from './surveyConfig.js';
+import { todoAddJson, todoUpdateJson, categoryAddJson, categoryUpdateJson } from './surveyConfig.js';
 import { showAuthContainer } from './auth.js';
 
+let userTodosTable;
+let adminTodosTable;
+let adminCategoriesTable;
 
 function initUserTable(todos) {
-    if ($.fn.DataTable.isDataTable('#userTodosTable')) {
-        $('#userTodosTable').DataTable().destroy();
+    if (userTodosTable) {
+        userTodosTable.destroy();
+        userTodosTable = null;
     }
     $('#userTodosTable').off();
 
     userTodosTable = $('#userTodosTable').DataTable({
         data: todos,
+        destroy: true, // Tabloyu yeniden başlatmaya izin ver
         columns: [
             { 
                 data: 'title',
@@ -89,13 +94,15 @@ function initUserTable(todos) {
 }
 
 function initAdminTable(todos) {
-    if ($.fn.DataTable.isDataTable('#adminTodosTable')) {
-        $('#adminTodosTable').DataTable().destroy();
+    if (adminTodosTable) {
+        adminTodosTable.destroy();
+        adminTodosTable = null;
     }
     $('#adminTodosTable').off();
 
     adminTodosTable = $('#adminTodosTable').DataTable({
         data: todos,
+        destroy: true,
         columns: [
             { 
                 data: 'title',
@@ -138,53 +145,80 @@ function initAdminTable(todos) {
     });
 }
 
-export const loadTodos = () => {
+function initAdminCategoriesTable() {
     const token = localStorage.getItem('token');
-    const isAdmin = localStorage.getItem('isAdmin') === 'true';
-    
-    if (!token) {
-        showAuthContainer();
-        return;
+
+    if (adminCategoriesTable) {
+        adminCategoriesTable.destroy();
+        adminCategoriesTable = null;
     }
+    $('#adminCategoriesTable').off();
 
-    // containerlar role göre gizleniyor
-    document.getElementById('userTableContainer').style.display = isAdmin ? 'none' : 'block';
-    document.getElementById('adminTableContainer').style.display = isAdmin ? 'block' : 'none';
-    document.getElementById('addTodoBtn').style.display = isAdmin ? 'none' : 'block';
-
-    // page title role göre değişiyor
-    const titleElement = document.querySelector('.content-header h1');
-    if (titleElement) {
-        titleElement.textContent = isAdmin ? 'All Todos (Admin View)' : 'My Todos';
-    }
-
-    // endpoint role göre değişiyor
-    const endpoint = isAdmin ? 'http://localhost:3000/v1/todos/all' : 'http://localhost:3000/v1/todos';
-
-    fetch(endpoint, {
+    fetch('http://localhost:3000/v1/categories', {
         headers: {
             'Authorization': `Bearer ${token}`
         }
     })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Failed to fetch todos');
-        }
-        return response.json();
-    })
-    .then(todos => {
-        // role göre datatable oluşturuluyor
-        if (isAdmin) {
-            initAdminTable(todos);
-        } else {
-            initUserTable(todos);
-        }
+    .then(response => response.json())
+    .then(categories => {
+        adminCategoriesTable = $('#adminCategoriesTable').DataTable({
+            data: categories,
+            destroy: true,
+            columns: [
+                { 
+                    data: 'title',
+                    title: 'Title'
+                },
+                {
+                    data: 'createdAt',
+                    title: 'Created At',
+                    render: (data) => {
+                        return new Date(data).toLocaleDateString();
+                    }
+                },
+                {
+                    data: null,
+                    title: 'Actions',
+                    render: (data) => {
+                        return `
+                            <div class="action-buttons">
+                                <button class="btn btn-sm btn-warning update-category" 
+                                    data-id="${data._id}" 
+                                    data-title="${data.title}">
+                                    Update
+                                </button>
+                                <button class="btn btn-sm btn-danger delete-category" data-id="${data._id}">
+                                    Delete
+                                </button>
+                            </div>
+                        `;
+                    }
+                }
+            ],
+            responsive: true,
+            language: {
+                emptyTable: "No categories found"
+            },
+            order: [[0, 'desc']]
+        });
+
+        // Event handlers for category actions
+        $('#adminCategoriesTable').on('click', '.delete-category', function() {
+            const categoryId = $(this).data('id');
+            if (confirm('Are you sure you want to delete this category?')) {
+                deleteCategory(categoryId);
+            }
+        });
+
+        $('#adminCategoriesTable').on('click', '.update-category', function() {
+            const categoryId = $(this).data('id');
+            const currentTitle = $(this).data('title');
+            showUpdateCategoryModal(categoryId, currentTitle);
+        });
     })
     .catch(error => {
         console.error('Error:', error);
-        if (error.message === 'Failed to fetch todos') {
-            showAuthContainer();
-        }
+        alert('Error loading categories');
     });
 }
 
@@ -329,10 +363,167 @@ const showUpdateTodoModal = async (todoId, currentTitle, currentCategories) => {
     }
 }
 
+const deleteCategory = (categoryId) => {
+    const token = localStorage.getItem('token');
+    
+    fetch(`http://localhost:1880/delete-category/${categoryId}`, {
+        method: 'DELETE',
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    })
+    .then(() => {
+        initAdminCategoriesTable();
+        loadTodos();
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error deleting category');
+    });
+}
+
+const addCategory = () => {
+    const survey = new Survey.Model(categoryAddJson);
+    
+    survey.onComplete.add((sender, options) => {
+        const token = localStorage.getItem('token');
+        const formData = sender.data;
+        
+        fetch('http://localhost:1880/create-category', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ title: formData.title })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data._id) {
+                initAdminCategoriesTable();
+                $("#categorySurveyContainer").empty();
+                const modal = bootstrap.Modal.getInstance(document.getElementById('addCategoryModal'));
+                modal.hide();
+                // Backdrop'ı temizle
+                $('.modal-backdrop').remove();
+                $('body').removeClass('modal-open');
+            } else {
+                alert(data.message || 'An error occurred');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while adding the category');
+        });
+    });
+
+    $("#categorySurveyContainer").empty();
+    $("#categorySurveyContainer").Survey({ model: survey });
+    new bootstrap.Modal(document.getElementById('addCategoryModal')).show();
+}
+
+const showUpdateCategoryModal = (categoryId, currentTitle) => {
+    const survey = new Survey.Model(categoryUpdateJson);
+    
+    survey.data = {
+        title: currentTitle
+    };
+    
+    survey.onComplete.add((sender, options) => {
+        const token = localStorage.getItem('token');
+        const formData = sender.data;
+        fetch(`http://localhost:1880/update-category/${categoryId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ title: formData.title })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data._id) {
+                initAdminCategoriesTable();
+                $("#updateCategorySurveyContainer").empty();
+                const modal = bootstrap.Modal.getInstance(document.getElementById('updateCategoryModal'));
+                modal.hide();
+                $('.modal-backdrop').remove();
+                $('body').removeClass('modal-open');
+            } else {
+                alert(data.message || 'An error occurred');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while updating the category');
+        });
+    });
+
+    $("#updateCategorySurveyContainer").empty();
+    $("#updateCategorySurveyContainer").Survey({ model: survey });
+    new bootstrap.Modal(document.getElementById('updateCategoryModal')).show();
+}
+
+export const loadTodos = () => {
+    const token = localStorage.getItem('token');
+    const isAdmin = localStorage.getItem('isAdmin') === 'true';
+    
+    if (!token) {
+        showAuthContainer();
+        return;
+    }
+
+    // containerların role göre görünümünü ayarlama
+    document.getElementById('userTableContainer').style.display = isAdmin ? 'none' : 'block';
+    document.getElementById('adminTablesContainer').style.display = isAdmin ? 'block' : 'none';
+    document.getElementById('addTodoBtn').style.display = isAdmin ? 'none' : 'block';
+
+    const titleElement = document.querySelector('.content-header h1');
+    if (titleElement) {
+        titleElement.textContent = isAdmin ? 'Admin Dashboard' : 'My Todos';
+    }
+
+    if (isAdmin) {
+        initAdminCategoriesTable();
+        fetch('http://localhost:3000/v1/todos/all', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Failed to fetch todos');
+            return response.json();
+        })
+        .then(todos => initAdminTable(todos))
+        .catch(error => {
+            console.error('Error:', error);
+            if (error.message === 'Failed to fetch todos') {
+                showAuthContainer();
+            }
+        });
+    } else {
+        fetch('http://localhost:3000/v1/todos', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Failed to fetch todos');
+            return response.json();
+        })
+        .then(todos => initUserTable(todos))
+        .catch(error => {
+            console.error('Error:', error);
+            if (error.message === 'Failed to fetch todos') {
+                showAuthContainer();
+            }
+        });
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
-    //HTML ve DOM yüklendikten sonra datalar yükleniyor
     loadTodos();
     
-    // addTodoBtn idli butona click eventi ekledik
     document.getElementById('addTodoBtn').addEventListener('click', addTodo);
+    document.getElementById('addCategoryBtn')?.addEventListener('click', addCategory);
 });
