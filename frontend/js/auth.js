@@ -20,7 +20,21 @@ function createSurvey(json) {
         .then(data => {
             if (data.token) {
                 localStorage.setItem('token', data.token);
-                showTodoContainer();
+                // role kontrolü için me entpointine istek atılıyor
+                fetch('http://localhost:3000/v1/auth/me', {
+                    headers: {
+                        'Authorization': `Bearer ${data.token}`
+                    }
+                })
+                .then(response => response.json())
+                .then(userData => {
+                    localStorage.setItem('isAdmin', userData?.isAdmin || false);
+                    showTodoContainer();
+                })
+                .catch(error => {
+                    console.error('Error fetching user data:', error);
+                    alert('Error fetching user data');
+                });
             } else {
                 alert(data.message);
             }
@@ -51,10 +65,15 @@ function showRegister() {
 export function showAuthContainer() {
     document.getElementById('authContainer').style.display = 'block';
     document.getElementById('todoContainer').style.display = 'none';
+    // jwt ve role bilgileri siliniyor
     localStorage.removeItem('token');
+    localStorage.removeItem('isAdmin');
+    // datatable varsa onu kaldırıyoruz
+    if ($.fn.DataTable.isDataTable('#todosTable')) {
+        $('#todosTable').DataTable().destroy();
+    }
     $("#surveyContainer").empty();
     showLogin();
-
 }
 
 function showTodoContainer() {

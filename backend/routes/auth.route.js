@@ -1,5 +1,5 @@
 const express = require("express");
-const { register, login, updatePassword, createAdmin } = require("../controllers/auth.controller");
+const { register, login, updatePassword, createAdmin, me } = require("../controllers/auth.controller");
 const authMiddleware = require("../middlewares/auth");
 
 const router = express.Router();
@@ -140,5 +140,7 @@ router.patch("/update-password", authMiddleware, updatePassword);
  *         description: Invalid credentials
  */
 router.post("/create-admin", createAdmin);
+
+router.get("/me", authMiddleware, me);
 
 module.exports = router;

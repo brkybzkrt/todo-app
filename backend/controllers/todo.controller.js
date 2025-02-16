@@ -74,4 +74,16 @@ const deleteTodo = async (req, res) => {
     }
 }
 
-module.exports = { addTodo, getUserTodos, updateTodo, deleteTodo };
+const getAllTodos = async (req, res) => {
+    try {
+        const todos = await Todo.find({ isDeleted: false })
+            .populate("user", "username")
+            .populate("categories", "title");
+        
+        res.json(todos);
+    } catch (error) {
+        res.status(500).json({ message: "Tüm todo'lar getirilirken hata meydana geldi", error });
+    }
+};
+
+module.exports = { addTodo, getUserTodos, updateTodo, deleteTodo, getAllTodos };
