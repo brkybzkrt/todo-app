@@ -84,16 +84,20 @@ todo-app/
 
 1. Projeyi klonlayın
 2. Gerekli bağımlılıkları yükleyin:
-   ```bash
+```bash
    npm install
    ```
 3. `.env` dosyasını yapılandırın (MONGO_URL, JWT_SECRET, PORT) 
 (Not: MONGO_URL için Mongo Atlas kullanılmıştır.)
 4. node-red'i global olarak bilgisayar'a kurun 
- ```bash
+```bash
    npm install -g node-red
    ```
-5. Uygulamayı başlatın:
-   ```bash
+5. Terminalde node-red'i çalıştırın:
+ ```bash
+    node-red
+   ```
+6. Uygulamayı başlatın:
+```bash
    npm start
    ```
