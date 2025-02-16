@@ -7,15 +7,20 @@ const swaggerUi = require('swagger-ui-express');
 const specs = require('./swagger');
 const authMiddleware = require("./middlewares/auth");
 const connectDB = require("./db"); // Import the connectDB function
-
+const http = require('http');
+const todoEvents = require('./events/todoEvents');
 const authRoutes = require("./routes/auth.route");
 const todoRoutes = require("./routes/todo.route");
 const categoryRoutes = require("./routes/category.route");
 
 const app = express();
-app.use(bodyParser.json());
-app.use(cors());
 
+// Middleware
+app.use(cors());
+app.use(bodyParser.json());
+app.use(express.json());
+
+// Frontend dosyalarını serve et
 app.use(express.static(path.join(__dirname, '../frontend')));
 
 connectDB();
@@ -32,7 +37,42 @@ app.get("/", (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+const server = http.createServer(app);
+
+// Socket.IO setup
+const io = require('socket.io')(server, {
+    cors: {
+        origin: "http://localhost:3000",
+        methods: ["GET", "POST"]
+    }
+});
+
+
+io.on('connection', (socket) => {
+    console.log('A user connected');
+
+    socket.on('disconnect', () => {
+        console.log('User disconnected');
+    });
+});
+
+
+
+todoEvents.on('todoCreated', (todo) => {
+    io.emit('todoCreated', todo);
+});
+
+todoEvents.on('todoDeleted', (todoId) => {
+    io.emit('todoDeleted', todoId);
+});
+
+todoEvents.on('todoUpdated', (todo) => {
+    io.emit('todoUpdated', todo);
+});
+
+app.set('todoEvents', todoEvents);
+
+server.listen(PORT, () => {
     console.log(`🚀 Server is running on http://localhost:${PORT}`);
     console.log(`API Documentation available at http://localhost:${PORT}/api-docs`);
 });
