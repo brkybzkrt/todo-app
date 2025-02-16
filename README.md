@@ -71,7 +71,8 @@ todo-app/
 
 - Kullanıcıya özel todo yönetimi
 - RESTful API mimarisi (MVC mimarisi)
-- Admin Dashboard da gerçek zamanlı Todo güncellemeleri (Socket.IO ile)
+- Admin Dashboard da gerçek zamanlı Todo güncellemeleri (Kullanıcıların update,create,delete işlemleri anlık yansır) (Socket.IO ile)
+
 ![User Todos](./project-images/admin-all-todos.png)
 
 - Güvenli kimlik doğrulama ve yetkilendirme
@@ -88,8 +89,11 @@ todo-app/
    ```
 3. `.env` dosyasını yapılandırın (MONGO_URL, JWT_SECRET, PORT) 
 (Not: MONGO_URL için Mongo Atlas kullanılmıştır.)
-
-4. Uygulamayı başlatın:
+4. node-red'i global olarak bilgisayar'a kurun 
+ ```bash
+   npm install -g node-red
+   ```
+5. Uygulamayı başlatın:
    ```bash
    npm start
    ```
